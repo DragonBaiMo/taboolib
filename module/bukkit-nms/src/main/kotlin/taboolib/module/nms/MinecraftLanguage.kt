@@ -177,12 +177,18 @@ object MinecraftLanguage {
     private fun loadFilesFromExchange(): Boolean {
         if (Exchanges.MINECRAFT_LANGUAGE in Exchanges) {
             val map = Exchanges.get<MatrixList<Any>>(Exchanges.MINECRAFT_LANGUAGE)
-            if (MinecraftVersion.isHigher(MinecraftVersion.V1_12)) {
-                map.forEach { files[it[0] as String] = LanguageFile.FormatJson(it[1] as File, it[2] as JsonObject) }
-            } else {
-                map.forEach { files[it[0] as String] = LanguageFile.FormatProperties(it[1] as File, it[2] as Properties) }
+            try {
+                if (MinecraftVersion.isHigher(MinecraftVersion.V1_12)) {
+                    map.forEach { files[it[0] as String] = LanguageFile.FormatJson(it[1] as File, it[2] as JsonObject) }
+                } else {
+                    map.forEach { files[it[0] as String] = LanguageFile.FormatProperties(it[1] as File, it[2] as Properties) }
+                }
+                return true
+            } catch (_: ClassCastException) {
+                // Exchange 中的数据格式与当前期望不匹配，清除缓存并重新加载
+                Exchanges[Exchanges.MINECRAFT_LANGUAGE] = null
+                return false
             }
-            return true
         }
         return false
     }
